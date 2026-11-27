@@ -55,7 +55,7 @@ const I18N = (() => {
 "A Harvard case on a loan to a mining company in 2008: mapped how a drop in the gold price spreads into credit, country and reputational risk, then computed expected loss and risk-adjusted return from PD, LGD and EAD.":"Un caso di Harvard su un prestito a una società mineraria nel 2008: abbiamo mostrato come un calo del prezzo dell'oro si trasmette al rischio di credito, paese e reputazione, poi calcolato perdita attesa e rendimento corretto per il rischio da PD, LGD ed EAD.",
 "Case study":"Caso di studio","Networks":"Reti",
 "Want to talk markets or projects?":"Vuoi parlare di mercati o progetti?",
-"Write to me by email or on LinkedIn.":"Scrivimi per email o su LinkedIn.",
+"Message me on LinkedIn.":"Scrivimi su LinkedIn.",
 "Educational projects. Nothing here is investment advice.":"Progetti didattici. Niente qui è una consulenza finanziaria.",
 // Portfolio Lab
 "Six well-known portfolios, tested on real monthly data from mid-2007, which means the 2008 crisis, the euro debt crisis, Covid and the 2022 rate shock are all in the sample. Switch to euros to see them through the eyes of a European investor, or build your own mix.":"Sei portafogli famosi, testati su dati mensili reali da metà 2007: nel campione ci sono la crisi del 2008, la crisi del debito europeo, il Covid e lo shock dei tassi del 2022. Passa agli euro per vederli con gli occhi di un investitore europeo, o costruisci il tuo mix.",
