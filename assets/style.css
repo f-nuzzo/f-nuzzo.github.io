@@ -168,3 +168,4 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
 .me img{width:96px;height:96px;border-radius:50%;object-fit:cover;object-position:center;border:3px solid var(--card);box-shadow:0 0 0 1px var(--line2),var(--shadow)}
 .c-wide{grid-column:span 6}
 @media (max-width:900px){.c-wide{grid-column:span 6}}
+.theme.lang{font:600 12px var(--mono);letter-spacing:.04em}

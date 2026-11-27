@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Europe Dashboard · Federico Nuzzo</title>
 <script src="assets/theme.js"></script>
+<script src="assets/i18n.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/style.css">
@@ -68,11 +69,11 @@
 <script>
 (async () => {
   const D = await (await fetch('data/europe.json')).json(), S = D.series, $ = id => document.getElementById(id);
-  $('updated').textContent = 'Data refreshed ' + Charts.fmtDate(D.updated);
+  const upd = () => $('updated').textContent = I18N.L('Data refreshed ','Dati aggiornati al ') + Charts.fmtDate(D.updated); upd();
   const last = o => o.at(-1), ago = (o, months) => { const t = new Date(last(o)[0]); t.setMonth(t.getMonth() - months);
     return o.reduce((b, x) => Math.abs(new Date(x[0]) - t) < Math.abs(new Date(b[0]) - t) ? x : b, o[0]); };
   const sgn = v => (v > 0 ? '+' : v < 0 ? '−' : '±') + Math.abs(v);
-  const chg = (v, unit, good) => `<span class="chg" style="color:${v === 0 ? 'var(--muted)' : (good ? v > 0 : v < 0) ? 'var(--pos)' : 'var(--neg)'}">${sgn(+v.toFixed(2))}${unit} vs 1y ago</span>`;
+  const chg = (v, unit, good) => `<span class="chg" style="color:${v === 0 ? 'var(--muted)' : (good ? v > 0 : v < 0) ? 'var(--pos)' : 'var(--neg)'}">${sgn(+v.toFixed(2))}${unit}${I18N.L(" vs 1y ago"," rispetto a 1 anno fa")}</span>`;
 
   // spread series (monthly, bp)
   const de = Object.fromEntries(D.yields.DE.obs);
@@ -80,24 +81,24 @@
   const it = spread('IT');
 
   const hicp = S.hicp.obs, core = S.core.obs, dfr = S.dfr.obs, fx = S.eurusd.obs, un = S.unemp.obs, bund = D.yields.DE.obs;
-  const L = { dfr: last(dfr)[1], hicp: last(hicp)[1], core: last(core)[1], it: last(it)[1], bund: last(bund)[1], fx: last(fx)[1], un: last(un)[1] };
-  const real = +(L.dfr - L.hicp).toFixed(2);
-  const K = [
-    { tag:'ECB deposit rate', val:L.dfr.toFixed(2)+'%', c:chg(L.dfr - ago(dfr,12)[1], ' pts'), obs:dfr, date:last(dfr)[0],
-      read: real >= 0 ? `Above inflation by ${real} pts: a positive real rate.` : `Below inflation by ${Math.abs(real)} pts: real rates are negative.` },
-    { tag:'Inflation (HICP)', val:L.hicp.toFixed(1)+'%', c:chg(L.hicp - ago(hicp,12)[1], ' pts', false), obs:hicp, date:last(hicp)[0],
-      read: Math.abs(L.hicp - 2) <= .3 ? 'Close to the ECB’s 2% target.' : L.hicp > 2 ? `${(L.hicp-2).toFixed(1)} pts above the ECB’s 2% target.` : `${(2-L.hicp).toFixed(1)} pts below the ECB’s 2% target.` },
-    { tag:'Core inflation', val:L.core.toFixed(1)+'%', c:chg(L.core - ago(core,12)[1], ' pts', false), obs:core, date:last(core)[0],
-      read: L.hicp > L.core ? 'Below headline: energy and food are pushing prices up.' : 'Above headline: energy and food are holding prices down.' },
-    { tag:'BTP–Bund spread', val:L.it+' bp', c:chg(L.it - ago(it,12)[1], ' bp', false), obs:it, date:last(it)[0],
-      read: `Italy pays ${(L.it/100).toFixed(2)} pts more than Germany to borrow for 10 years.` },
-    { tag:'German 10-year yield', val:L.bund.toFixed(2)+'%', c:chg(L.bund - ago(bund,12)[1], ' pts'), obs:bund, date:last(bund)[0],
-      read: L.bund > L.dfr ? `${(L.bund-L.dfr).toFixed(2)} pts above the deposit rate: markets want more to lock money up for 10 years.` : 'Below the deposit rate: markets expect cuts ahead.' },
-    { tag:'EUR / USD', val:L.fx.toFixed(4), c:chg(L.fx - ago(fx,12)[1], '', true), obs:fx, date:last(fx)[0],
-      read: L.fx > ago(fx,12)[1] ? 'Euro stronger than a year ago: US assets are worth less in euros.' : 'Euro weaker than a year ago: US assets are worth more in euros.' },
-  ];
-  $('kpis').innerHTML = K.map((k,i) => `<div class="kpi rv in"><span class="tag">${k.tag}</span><div class="val">${k.val}</div>${k.c}<div class="read">${k.read}</div><div class="spk" id="spk${i}"></div><span class="tag" style="font-size:10.5px">${Charts.fmtDate(k.date)}</span></div>`).join('');
-  K.forEach((k,i) => Charts.spark($('spk'+i), k.obs.slice(-260)));
+  const V = { dfr: last(dfr)[1], hicp: last(hicp)[1], core: last(core)[1], it: last(it)[1], bund: last(bund)[1], fx: last(fx)[1], un: last(un)[1] };
+  const real = +(V.dfr - V.hicp).toFixed(2);
+  const L = I18N.L; let K; const build = () => { K = [
+    { tag:'ECB deposit rate', val:V.dfr.toFixed(2)+'%', c:chg(V.dfr - ago(dfr,12)[1], L(' pts',' punti')), obs:dfr, date:last(dfr)[0],
+      read: real >= 0 ? L(`Above inflation by ${real} pts: a positive real rate.`,`Sopra l'inflazione di ${real} punti: tasso reale positivo.`) : L(`Below inflation by ${Math.abs(real)} pts: real rates are negative.`,`Sotto l'inflazione di ${Math.abs(real)} punti: tassi reali negativi.`) },
+    { tag:'Inflation (HICP)', val:V.hicp.toFixed(1)+'%', c:chg(V.hicp - ago(hicp,12)[1], L(' pts',' punti'), false), obs:hicp, date:last(hicp)[0],
+      read: Math.abs(V.hicp - 2) <= .3 ? L('Close to the ECB’s 2% target.','Vicina all’obiettivo BCE del 2%.') : V.hicp > 2 ? L(`${(V.hicp-2).toFixed(1)} pts above the ECB’s 2% target.`,`${(V.hicp-2).toFixed(1)} punti sopra l’obiettivo BCE del 2%.`) : L(`${(2-V.hicp).toFixed(1)} pts below the ECB’s 2% target.`,`${(2-V.hicp).toFixed(1)} punti sotto l’obiettivo BCE del 2%.`) },
+    { tag:'Core inflation', val:V.core.toFixed(1)+'%', c:chg(V.core - ago(core,12)[1], L(' pts',' punti'), false), obs:core, date:last(core)[0],
+      read: V.hicp > V.core ? L('Below headline: energy and food are pushing prices up.','Sotto l’inflazione totale: energia e cibo spingono i prezzi in alto.') : L('Above headline: energy and food are holding prices down.','Sopra l’inflazione totale: energia e cibo frenano i prezzi.') },
+    { tag:'BTP–Bund spread', val:V.it+' bp', c:chg(V.it - ago(it,12)[1], ' bp', false), obs:it, date:last(it)[0],
+      read: L(`Italy pays ${(V.it/100).toFixed(2)} pts more than Germany to borrow for 10 years.`,`L’Italia paga ${(V.it/100).toFixed(2)} punti in più della Germania per indebitarsi a 10 anni.`) },
+    { tag:'German 10-year yield', val:V.bund.toFixed(2)+'%', c:chg(V.bund - ago(bund,12)[1], L(' pts',' punti')), obs:bund, date:last(bund)[0],
+      read: V.bund > V.dfr ? L(`${(V.bund-V.dfr).toFixed(2)} pts above the deposit rate: markets want more to lock money up for 10 years.`,`${(V.bund-V.dfr).toFixed(2)} punti sopra il tasso sui depositi: il mercato chiede di più per vincolare i soldi 10 anni.`) : L('Below the deposit rate: markets expect cuts ahead.','Sotto il tasso sui depositi: il mercato si aspetta tagli.') },
+    { tag:'EUR / USD', val:V.fx.toFixed(4), c:chg(V.fx - ago(fx,12)[1], '', true), obs:fx, date:last(fx)[0],
+      read: V.fx > ago(fx,12)[1] ? L('Euro stronger than a year ago: US assets are worth less in euros.','Euro più forte di un anno fa: gli investimenti USA valgono meno in euro.') : L('Euro weaker than a year ago: US assets are worth more in euros.','Euro più debole di un anno fa: gli investimenti USA valgono di più in euro.') },
+  ]; };
+  const kpis = () => { build(); $('kpis').innerHTML = K.map((k,i) => `<div class="kpi rv in"><span class="tag">${k.tag}</span><div class="val">${k.val}</div>${k.c}<div class="read">${k.read}</div><div class="spk" id="spk${i}"></div><span class="tag" style="font-size:10.5px">${Charts.fmtDate(k.date)}</span></div>`).join('');
+  K.forEach((k,i) => Charts.spark($('spk'+i), k.obs.slice(-260))); }; kpis();
 
   const leg = (id, s) => $(id).innerHTML = s.map(x => `<span><i style="background:${x.color}"></i>${x.name}</span>`).join('');
   function draw() {
@@ -114,14 +115,14 @@
                  { name:'1 year ago', color:'var(--dim)', vals:at(12), dash:true } ];
     Charts.cat($('c-curve'), M, cv, { h:260 }); leg('l-curve', cv);
     const slope = cv[0].vals[M.indexOf('10Y')] - cv[0].vals[M.indexOf('2Y')];
-    $('curve-read').textContent = slope > .25 ? `Upward sloping: 10-year yields are ${slope.toFixed(2)} pts above 2-year. Lenders want more for lending long.`
-      : slope < -.1 ? `Inverted: 2-year yields are above 10-year by ${Math.abs(slope).toFixed(2)} pts, often read as a sign of cuts or slowdown ahead.` : 'Almost flat between 2 and 10 years.';
+    const Lc = I18N.L; $('curve-read').textContent = slope > .25 ? Lc(`Upward sloping: 10-year yields are ${slope.toFixed(2)} pts above 2-year. Lenders want more for lending long.`,`Inclinata verso l’alto: il 10 anni rende ${slope.toFixed(2)} punti più del 2 anni. Chi presta a lungo chiede di più.`)
+      : slope < -.1 ? Lc(`Inverted: 2-year yields are above 10-year by ${Math.abs(slope).toFixed(2)} pts, often read as a sign of cuts or slowdown ahead.`,`Invertita: il 2 anni rende ${Math.abs(slope).toFixed(2)} punti più del 10 anni, spesso letto come segnale di tagli o rallentamento.`) : Lc('Almost flat between 2 and 10 years.','Quasi piatta tra 2 e 10 anni.');
 
     const cols = {IT:'var(--accent)', FR:'var(--p-threefund)', ES:'var(--p-permanent)', GR:'var(--p-butterfly)', PT:'var(--p-mix)'};
     const sp = Object.entries(cols).map(([c, color]) => ({ name:D.yields[c].name, color, obs:spread(c).filter(o => o[0] >= '2019'), width:c==='IT'?2.6:1.6 }));
     Charts.time($('c-spread'), sp, { h:260, yfmt:v => Math.round(v)+'' , zeroLine:true }); leg('l-spread', sp);
   }
-  draw(); let tm; addEventListener('resize', () => { clearTimeout(tm); tm = setTimeout(draw, 150); });
+  draw(); addEventListener('langchange', () => { upd(); kpis(); draw(); }); let tm; addEventListener('resize', () => { clearTimeout(tm); tm = setTimeout(draw, 150); });
 
   const rows = Object.entries(D.yields).map(([c, y]) => ({ c, name:y.name, yld:last(y.obs)[1], sp:c==='DE'?null:last(spread(c))[1], inf:D.inflation_by_country[c]?.[1] }))
     .sort((a,b) => b.yld - a.yld);

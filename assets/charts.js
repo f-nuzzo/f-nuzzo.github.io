@@ -1,7 +1,7 @@
 // Small SVG chart helpers shared by the dashboard pages (no libraries).
 const Charts = (() => {
   const t = d => new Date(d.length === 7 ? d + '-15' : d).getTime();
-  const fmtDate = d => new Date(t(d)).toLocaleString('en-GB', d.length === 7 ? {month:'short', year:'numeric'} : {day:'numeric', month:'short', year:'numeric'});
+  const fmtDate = d => new Date(t(d)).toLocaleString(typeof I18N!=='undefined'&&I18N.lang==='it'?'it-IT':'en-GB', d.length === 7 ? {month:'short', year:'numeric'} : {day:'numeric', month:'short', year:'numeric'});
 
   // series: [{name, color, obs:[[date, value]], dash}]
   function time(el, series, {h = 300, yfmt = v => v.toFixed(1), zeroLine = false, step = null} = {}) {
@@ -43,7 +43,7 @@ const Charts = (() => {
     g += `<line class="cur" y1="${pad.t}" y2="${h-pad.b}" style="stroke:var(--dim)" stroke-dasharray="2 3" opacity="0"/>`;
     el.innerHTML = `<svg viewBox="0 0 ${W} ${h}" height="${h}">${g}</svg><div class="tip"></div>`;
     hover(el, W, mx => { const i = Math.max(0, Math.min(labels.length-1, Math.round((mx-pad.l)/(W-pad.l-pad.r)*(labels.length-1))));
-      return { x: X(i), html: `<div style="color:var(--muted);margin-bottom:6px">${labels[i]} maturity</div>` + series.map(s=>`<div><span style="color:${s.color}">${s.name}</span><b>${yfmt(s.vals[i])}</b></div>`).join('') }; });
+      return { x: X(i), html: `<div style="color:var(--muted);margin-bottom:6px">${labels[i]} ${typeof I18N!=='undefined'?I18N.L('maturity','scadenza'):'maturity'}</div>` + series.map(s=>`<div><span style="color:${s.color}">${s.name}</span><b>${yfmt(s.vals[i])}</b></div>`).join('') }; });
   }
 
   function spark(el, obs, color = 'var(--accent)') {

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>World Returns Map · Federico Nuzzo</title>
 <script src="assets/theme.js"></script>
+<script src="assets/i18n.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/style.css">
@@ -78,7 +79,7 @@
 (async () => {
   const [G, R] = await Promise.all([fetch('data/world_paths.json').then(r=>r.json()), fetch('data/world_returns.json').then(r=>r.json())]);
   const $ = id => document.getElementById(id), st = { p:'ytd', c:'usd' };
-  $('updated').textContent = 'Prices through ' + new Date(R.updated).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+  const upd = () => $('updated').textContent = I18N.L('Prices through ','Prezzi al ') + new Date(R.updated).toLocaleDateString(I18N.L('en-GB','it-IT'),{day:'numeric',month:'short',year:'numeric'}); upd();
   const pct = v => (v>0?'+':'') + (v*100).toFixed(1) + '%';
   const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
@@ -102,7 +103,7 @@
     const by = Object.fromEntries(vals.map(x => [x.id, x]));
     shapes.forEach(s => { const x = by[s.dataset.id];
       s.classList.toggle('has', !!x); s.classList.toggle('nodata', !x); s.style.fill = x ? color(x.v, cap) : ''; });
-    $('scale').innerHTML = `<span>${pct(-cap)}</span><span class="bar" style="background:linear-gradient(90deg,${color(-cap,cap)},${color(0,cap)},${color(cap,cap)})"></span><span>${pct(cap)}</span><span style="margin-left:auto">${st.p==='3y'||st.p==='5y'?'Annualised':'Total return'} · ${st.c.toUpperCase()}</span>`;
+    $('scale').innerHTML = `<span>${pct(-cap)}</span><span class="bar" style="background:linear-gradient(90deg,${color(-cap,cap)},${color(0,cap)},${color(cap,cap)})"></span><span>${pct(cap)}</span><span style="margin-left:auto">${st.p==='3y'||st.p==='5y'?I18N.L('Annualised','Annualizzato'):I18N.L('Total return','Rendimento totale')} · ${st.c.toUpperCase()}</span>`;
 
     const max = Math.max(...vals.map(x=>Math.abs(x.v)));
     const li = (x,i) => `<li><span class="n">${i}</span><span>${x.name} <span class="mono" style="font-size:11px;color:var(--dim)">${x.etf}</span></span><span class="v" style="color:${x.v>=0?'var(--pos)':'var(--neg)'}">${pct(x.v)}</span><span class="b" style="width:${Math.abs(x.v)/max*100}%;background:${color(x.v,cap)}"></span></li>`;
@@ -112,8 +113,8 @@
     const us = by['840'], it = by['380'], up = vals.filter(x=>x.v>0).length, med = sorted[Math.floor(sorted.length/2)].v;
     const f = [
       ['Best market', sorted[0].name, pct(sorted[0].v)],
-      ['Median country', `${up} of ${vals.length} markets up`, pct(med)],
-      ['United States vs Italy', `US ${pct(us.v)} · Italy ${pct(it.v)}`, (it.v>us.v?'Italy ahead by ':'US ahead by ') + ((Math.abs(it.v-us.v))*100).toFixed(1)+' pts'],
+      ['Median country', I18N.L(`${up} of ${vals.length} markets up`,`${up} borse su ${vals.length} in rialzo`), pct(med)],
+      ['United States vs Italy', I18N.L(`US ${pct(us.v)} · Italy ${pct(it.v)}`,`USA ${pct(us.v)} · Italia ${pct(it.v)}`), (it.v>us.v?I18N.L('Italy ahead by ','Italia avanti di '):I18N.L('US ahead by ','USA avanti di ')) + ((Math.abs(it.v-us.v))*100).toFixed(1)+I18N.L(' pts',' punti')],
     ];
     $('facts').innerHTML = f.map(([t,a,b]) => `<div class="kpi"><span class="tag">${t}</span><div class="val" style="font-size:24px">${b}</div><div class="read">${a}</div></div>`).join('');
   }
@@ -123,7 +124,7 @@
     if (!x || x[st.c][st.p] == null) { tip.style.opacity = 0; return; }
     const r = $('map').getBoundingClientRect(), v = x[st.c][st.p];
     tip.innerHTML = `<div style="margin-bottom:4px"><b>${x.name}</b><span style="color:var(--dim)">${x.etf}</span></div>` +
-      ['ytd','1y','3y','5y'].map(k => `<div><span style="color:${k===st.p?'var(--text)':'var(--muted)'}">${{ytd:'YTD','1y':'1 year','3y':'3y / yr','5y':'5y / yr'}[k]}</span><b style="color:${x[st.c][k]>=0?'var(--pos)':'var(--neg)'}">${x[st.c][k]==null?'–':pct(x[st.c][k])}</b></div>`).join('');
+      ['ytd','1y','3y','5y'].map(k => `<div><span style="color:${k===st.p?'var(--text)':'var(--muted)'}">${I18N.L({ytd:'YTD','1y':'1 year','3y':'3y / yr','5y':'5y / yr'}[k],{ytd:'Da inizio anno','1y':'1 anno','3y':'3a / anno','5y':'5a / anno'}[k])}</span><b style="color:${x[st.c][k]>=0?'var(--pos)':'var(--neg)'}">${x[st.c][k]==null?'–':pct(x[st.c][k])}</b></div>`).join('');
     const px = e.clientX - r.left; tip.style.left = (px > r.width*.65 ? px - 220 : px + 20) + 'px'; tip.style.top = (e.clientY - r.top + 10) + 'px'; tip.style.opacity = 1; };
   $('map').onmouseleave = () => tip.style.opacity = 0;
 
@@ -131,6 +132,7 @@
     st[key] = b.dataset.v; [...$(id).children].forEach(x => x.classList.toggle('on', x===b)); render(); };
   seg('period','p'); seg('ccy','c');
   new MutationObserver(render).observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
+  addEventListener('langchange', () => { upd(); render(); });
   render();
 })();
 </script>

@@ -10,7 +10,7 @@
 
   // ---- controls
   const years = [...new Set(D.dates.map(d=>d.slice(0,4)))].filter(y => D.dates.filter(d=>d.startsWith(y)).length > 0).slice(0,-3);
-  $('start').innerHTML = years.map(y=>`<option value="${y}">From ${y}</option>`).join('');
+  $('start').innerHTML = years.map(y=>`<option value="${y}">${I18N.L('From','Dal')} ${y}</option>`).join('');
   $('start').onchange = e => { state.start = e.target.value; render(); };
   $('ccy').onclick = e => { const b = e.target.closest('button'); if(!b) return;
     state.ccy = b.dataset.v; [...$('ccy').children].forEach(x=>x.classList.toggle('on', x===b)); render(); };
@@ -65,13 +65,14 @@
     const cur = state.ccy === 'usd' ? '$' : '€';
     lineChart($('growth'), res.map(r=>({...r, v:r.value.map(v=>v*1e4)})), {log:true, yfmt:v=>cur+(v>=1e4?(v/1e3).toFixed(v%1e3?1:0).replace('.0','')+'k':Math.round(v/100)/10+'k')});
     lineChart($('dd'), res.map(r=>({...r, v:r.stats.dd})), {h:200, zero:true, yfmt:v=>Math.round(v*100)+'%'});
-    $('growth-sub').textContent = `${cur}10,000 invested ${new Date(D.dates[i0]+'-01').toLocaleString('en-GB',{month:'short',year:'numeric'})}, in ${state.ccy.toUpperCase()}. Log scale, so equal slopes mean equal % returns.`;
+    const md = new Date(D.dates[i0]+'-01').toLocaleString(I18N.L('en-GB','it-IT'),{month:'short',year:'numeric'});
+    $('growth-sub').textContent = I18N.L(`${cur}10,000 invested ${md}, in ${state.ccy.toUpperCase()}. Log scale, so equal slopes mean equal % returns.`, `${cur}10.000 investiti a ${md}, in ${state.ccy.toUpperCase()}. Scala logaritmica: pendenze uguali significano rendimenti % uguali.`);
 
     // stats table
     const spy = E.run(D, {SPY:1}, state.ccy, i0).ret;
     const cols = [
       ['cagr','CAGR',x=>E.pct(x),1], ['vol','Volatility',x=>E.pct(x),-1], ['sharpe','Sharpe',x=>x.toFixed(2),1],
-      ['sortino','Sortino',x=>x.toFixed(2),1], ['maxdd','Max drawdown',x=>E.pct(x),1], ['longest','Longest underwater',x=>x+' mo',-1],
+      ['sortino','Sortino',x=>x.toFixed(2),1], ['maxdd','Max drawdown',x=>E.pct(x),1], ['longest','Longest underwater',x=>x+I18N.L(' mo',' mesi'),-1],
       ['calmar','Calmar',x=>x.toFixed(2),1], ['bestY','Best year',x=>x,0], ['worstY','Worst year',x=>x,0], ['corr','Corr. to stocks',x=>x.toFixed(2),0], ['final','Final value',x=>x,0]];
     const rows = res.map(r => ({ r, cagr:r.stats.cagr, vol:r.stats.vol, sharpe:r.stats.sharpe, sortino:r.stats.sortino, maxdd:r.stats.maxdd,
       longest:r.stats.longest, calmar:r.stats.calmar, corr:E.corr(r.ret, spy), finalN:r.value.at(-1),
@@ -96,7 +97,7 @@
         return `<td style="background:${bg};color:var(--text)">${(a.r*100).toFixed(0)}</td>`}).join('')}</tr>`).join('');
 
     const mt = Object.values(MIX.w).reduce((a,b)=>a+b,0);
-    $('mix-total').textContent = `Total set: ${Math.round(mt*100)}%` + (Math.abs(mt-1)>.001 ? ' → rescaled to 100%' : '');
+    $('mix-total').textContent = I18N.L('Total set: ','Totale impostato: ') + Math.round(mt*100) + '%' + (Math.abs(mt-1)>.001 ? I18N.L(' → rescaled to 100%',' → riportato al 100%') : '');
   }
   $('stats').onclick = e => { const k = e.target.closest('th')?.dataset.k; if(!k) return;
     state.sort = { k, d: state.sort.k===k ? -state.sort.d : -1 }; render(); };
@@ -106,8 +107,9 @@
   $('cards').innerHTML = E.PORTFOLIOS.map(p=>`<div class="pcard"><h4><span class="dot" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${p.color}"></span>${p.name}</h4>
     <div class="who">${p.who}</div><p>${p.note}</p>
     <div class="wbar">${Object.entries(p.w).map(([k,v])=>`<span style="flex:${v};background:${ac[k]}"></span>`).join('')}</div>
-    <div class="wlist">${Object.entries(p.w).map(([k,v])=>`<span><span style="color:${ac[k]}">●</span> ${Math.round(v*1000)/10}% ${D.assets[k].name}</span>`).join('')}</div></div>`).join('');
+    <div class="wlist">${Object.entries(p.w).map(([k,v])=>`<span><span style="color:${ac[k]}">●</span> ${Math.round(v*1000)/10}% <span>${D.assets[k].name}</span></span>`).join('')}</div></div>`).join('');
 
   chips(); mixUI(); render();
+  addEventListener('langchange', () => { const v = $('start').value; $('start').innerHTML = years.map(y=>`<option value="${y}">${I18N.L('From','Dal')} ${y}</option>`).join(''); $('start').value = v; render(); });
   let t; addEventListener('resize', () => { clearTimeout(t); t = setTimeout(render, 150); });
 })();
