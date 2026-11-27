@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Portfolio Lab · Federico Nuzzo</title>
+<script src="assets/theme.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+.lab-hero{padding-top:80px;padding-bottom:30px}
+.lab-hero h1{font-size:clamp(36px,5vw,60px);letter-spacing:-.035em;line-height:1.03;font-weight:700}
+.lab-hero p{color:var(--muted);max-width:680px;margin-top:18px;font-size:17px}
+.bar{position:sticky;top:82px;z-index:40;display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;
+  background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:12px 0;border-bottom:1px solid var(--line);margin-bottom:24px}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:999px;padding:3px}
+.seg button{background:none;border:0;color:var(--muted);font:500 13px var(--mono);padding:6px 13px;border-radius:999px;cursor:pointer}
+.seg button.on{background:var(--text);color:var(--bg)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);color:var(--muted);
+  font:500 13px var(--sans);padding:7px 13px;border-radius:999px;cursor:pointer;transition:.2s}
+.chip i{width:9px;height:9px;border-radius:50%;opacity:.35}
+.chip.on{color:var(--text);border-color:var(--line2)} .chip.on i{opacity:1}
+select{background:var(--card);color:var(--text);border:1px solid var(--line2);border-radius:999px;font:500 13px var(--mono);padding:7px 12px}
+.grid2{display:grid;grid-template-columns:2fr 1fr;gap:14px}
+.panel{background:var(--card);box-shadow:var(--shadow);border:1px solid var(--line);border-radius:var(--radius);padding:22px}
+.panel h3{font-size:18px;font-weight:700;letter-spacing:-.01em}
+.panel .sub{color:var(--muted);font-size:13.5px;margin-top:2px}
+.chart{position:relative;margin-top:16px}
+.chart svg{width:100%;display:block;overflow:visible}
+.chart text{font-family:var(--mono);font-size:10.5px;fill:var(--dim)}
+.tip{position:absolute;pointer-events:none;background:var(--card);box-shadow:var(--shadow);border:1px solid var(--line2);border-radius:10px;padding:10px 12px;font:12px var(--mono);
+  min-width:190px;opacity:0;transition:opacity .15s;z-index:5}
+.tip div{display:flex;justify-content:space-between;gap:14px} .tip b{font-weight:500}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font:500 10.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--dim);text-align:right;padding:10px 10px;border-bottom:1px solid var(--line2);cursor:pointer;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+td{padding:12px 10px;border-bottom:1px solid var(--line);text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+td:first-child{font-family:var(--sans);font-weight:500}
+td .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:9px}
+td.best{color:var(--accent)}
+.scroll{overflow-x:auto}
+.heat td{padding:8px 6px;font-size:12px}
+.mix{display:grid;grid-template-columns:1fr;gap:10px;margin-top:14px}
+.mix label{display:grid;grid-template-columns:150px 1fr 48px;align-items:center;gap:12px;font-size:13.5px;color:var(--muted)}
+.mix input[type=range]{accent-color:var(--accent);width:100%}
+.mix .v{font-family:var(--mono);text-align:right;color:var(--text)}
+.mix-total{font-family:var(--mono);font-size:12px;margin-top:8px;color:var(--muted)}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.pcard{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px}
+.pcard h4{font-size:16px;display:flex;align-items:center;gap:9px} .pcard .who{font:11px var(--mono);color:var(--dim);letter-spacing:.06em;text-transform:uppercase;margin-top:4px}
+.pcard p{color:var(--muted);font-size:14px;margin-top:10px}
+.wbar{display:flex;height:8px;border-radius:4px;overflow:hidden;margin-top:14px;gap:2px}
+.wlist{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:8px;font:11px var(--mono);color:var(--muted)}
+.method{color:var(--muted);font-size:15px;max-width:780px} .method p{margin-top:12px} .method b{color:var(--text);font-weight:500}
+@media(max-width:900px){.grid2,.cards{grid-template-columns:1fr}.bar{top:0}.mix label{grid-template-columns:110px 1fr 44px}}
+</style>
+</head>
+<body>
+<nav class="nav"><div class="nav-in">
+  <a href="index.html" class="logo">federico<span>.</span>nuzzo</a>
+  <div class="nav-links"><a href="index.html#lab">Lab</a><a href="index.html#education">Education</a><a href="index.html#projects">Projects</a><a href="lab.html" class="on">Portfolio Lab</a></div>
+  <div class="nav-right"><button class="theme" id="theme" aria-label="Toggle dark mode">☾</button><a class="btn" href="index.html#contact">Contact</a></div>
+</div></nav>
+
+<header class="wrap lab-hero">
+  <span class="tag acc">Lab · 01</span>
+  <h1 style="margin-top:14px">Portfolio Lab</h1>
+  <p>Six well-known portfolios, tested on real monthly data from mid-2007, which means the 2008 crisis, the euro debt crisis, Covid and the 2022 rate shock are all in the sample. Switch to euros to see them through the eyes of a European investor, or build your own mix.</p>
+</header>
+
+<main class="wrap">
+  <div class="bar">
+    <div class="chips" id="chips"></div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <select id="start" title="Start year"></select>
+      <div class="seg" id="ccy"><button data-v="usd" class="on">USD</button><button data-v="eur">EUR</button></div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <h3>Growth of 10,000</h3><div class="sub" id="growth-sub">Log scale, so equal slopes mean equal % returns.</div>
+      <div class="chart" id="growth"></div>
+    </div>
+    <div class="panel">
+      <h3>Build your own</h3><div class="sub">Shown as “Your mix”. Weights are rescaled to 100%.</div>
+      <div class="mix" id="mix"></div>
+      <div class="mix-total" id="mix-total"></div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:14px">
+    <h3>Drawdowns</h3><div class="sub">How far each portfolio sat below its previous peak.</div>
+    <div class="chart" id="dd"></div>
+  </div>
+
+  <div class="panel" style="margin-top:14px">
+    <h3>Statistics</h3><div class="sub">Click a column to sort. Best value in each column highlighted.</div>
+    <div class="scroll"><table id="stats"></table></div>
+  </div>
+
+  <div class="panel" style="margin-top:14px">
+    <h3>Crisis test</h3><div class="sub">Total return through each stress period (independent of the start year).</div>
+    <div class="scroll"><table id="crisis"></table></div>
+  </div>
+
+  <div class="panel" style="margin-top:14px">
+    <h3>Calendar-year returns</h3><div class="sub">Partial years marked with *.</div>
+    <div class="scroll"><table class="heat" id="heat"></table></div>
+  </div>
+
+  <section style="padding-top:50px">
+    <div class="sec-head"><div><span class="tag acc">The portfolios</span><h2>What's inside</h2></div></div>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <section>
+    <div class="sec-head"><div><span class="tag acc">Method</span><h2>How it's calculated</h2></div></div>
+    <div class="method">
+      <p><b>Data.</b> Monthly total returns (dividends reinvested) of US-listed ETFs from Yahoo Finance, used as proxies for each asset class: SPY, VTI, IJS, VEU, TLT, IEF, BND, SHY, BIL, GLD, DBC. The sample starts in June 2007 because that is when every ETF has a full monthly history.</p>
+      <p><b>Rebalancing.</b> Back to target weights at the end of every December. Between rebalances, weights drift with the market.</p>
+      <p><b>Euros.</b> In EUR mode each monthly return is converted at the EUR/USD rate, so currency moves are included. Unhedged, as a European buying these ETFs would actually experience them.</p>
+      <p><b>Risk metrics.</b> Volatility and Sharpe are annualised from monthly returns. In USD the risk-free rate is the T-bill ETF (BIL). In EUR it is set to zero, which slightly flatters every portfolio by the same amount. Max drawdown is measured on month-end values, so intra-month lows are deeper.</p>
+      <p><b>Limits.</b> No fees, taxes or trading costs. ETF proxies are simplified versions of the original portfolios (the All Weather here is the widely published retail version, not Bridgewater's fund). About 19 years is one market history, not a forecast.</p>
+    </div>
+  </section>
+</main>
+
+<footer><div class="wrap"><span>© 2026 Federico Nuzzo</span><span class="mono">Educational project. Past performance does not predict future returns. Not investment advice.</span></div></footer>
+
+<script src="assets/engine.js"></script>
+<script src="assets/lab.js"></script>
+</body>
+</html>

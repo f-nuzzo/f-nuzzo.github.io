@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>World Returns Map · Federico Nuzzo</title>
+<script src="assets/theme.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:14px}
+.map-wrap{position:relative}
+#map svg{width:100%;height:auto;display:block}
+#map path{stroke:var(--bg);stroke-width:.5;transition:fill .4s}
+#map path.nodata{fill:var(--bg2)}
+#map path.has{cursor:pointer}
+#map path.has:hover,#map path.sel{stroke:var(--text);stroke-width:1.2}
+#map circle{stroke:var(--bg);stroke-width:1;cursor:pointer}
+.scale{display:flex;align-items:center;gap:10px;margin-top:14px;font:12px var(--mono);color:var(--muted)}
+.scale .bar{flex:0 0 260px;height:10px;border-radius:5px}
+.rank{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.rank ol{list-style:none;margin-top:12px}
+.rank li{display:grid;grid-template-columns:24px 1fr 70px 1fr;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:14.5px}
+.rank li .n{font:12px var(--mono);color:var(--dim)}
+.rank li .v{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+.rank li .b{height:8px;border-radius:4px}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:900px){.rank,.facts{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<nav class="nav"><div class="nav-in">
+  <a href="index.html" class="logo">federico<span>.</span>nuzzo</a>
+  <div class="nav-links"><a href="index.html#lab">Lab</a><a href="lab.html">Portfolio Lab</a><a href="europe.html">Europe</a><a href="world.html" class="on">World Map</a></div>
+  <div class="nav-right"><button class="theme" id="theme" aria-label="Toggle dark mode">☾</button><a class="btn" href="index.html#contact">Contact</a></div>
+</div></nav>
+
+<header class="wrap page-hero">
+  <span class="tag acc">Lab · 03</span>
+  <h1>World Returns Map</h1>
+  <p>How 43 stock markets have done, country by country. Switch the period, and switch to euros to see what a European investor actually earned once the currency is counted.</p>
+  <p class="mono" style="font-size:13px;margin-top:12px;color:var(--dim)" id="updated"></p>
+</header>
+
+<main class="wrap">
+  <div class="controls">
+    <div class="seg" id="period"><button data-v="ytd" class="on">YTD</button><button data-v="1y">1 year</button><button data-v="3y">3y / yr</button><button data-v="5y">5y / yr</button></div>
+    <div class="seg" id="ccy"><button data-v="usd" class="on">USD</button><button data-v="eur">EUR</button></div>
+  </div>
+
+  <div class="facts" id="facts"></div>
+
+  <div class="panel map-wrap" style="margin-top:14px">
+    <div id="map"></div><div class="tip" id="tip"></div>
+    <div class="scale" id="scale"></div>
+  </div>
+
+  <div class="rank" style="margin-top:14px">
+    <div class="panel"><h3>Best performers</h3><ol id="top"></ol></div>
+    <div class="panel"><h3>Worst performers</h3><ol id="bottom"></ol></div>
+  </div>
+
+  <section>
+    <div class="sec-head"><div><span class="tag acc">Method</span><h2>Sources and notes</h2></div></div>
+    <div style="color:var(--muted);max-width:780px;font-size:15.5px">
+      <p><b style="color:var(--text)">Data.</b> Each country is measured through its main US-listed country ETF (mostly iShares MSCI funds, SPY for the United States), with dividends reinvested. Prices from Yahoo Finance.</p>
+      <p style="margin-top:12px"><b style="color:var(--text)">Periods.</b> YTD and 1 year are total returns. 3 and 5 years are annualised, so they compare with each other on a per-year basis.</p>
+      <p style="margin-top:12px"><b style="color:var(--text)">Euros.</b> EUR returns convert the dollar result at the EUR/USD rate. The ETFs already carry each local currency's move against the dollar, so the euro view is what an unhedged European investor would have seen.</p>
+      <p style="margin-top:12px"><b style="color:var(--text)">Limits.</b> An ETF is a proxy, not the national index itself: fees, sampling and sector weights differ. Grey countries have no liquid country ETF in the sample. Map shapes: Natural Earth via world-atlas.</p>
+    </div>
+  </section>
+</main>
+
+<footer><div class="wrap"><span>© 2026 Federico Nuzzo</span><span class="mono">Educational project. Past returns are not a forecast. Not investment advice.</span></div></footer>
+
+<script>
+(async () => {
+  const [G, R] = await Promise.all([fetch('data/world_paths.json').then(r=>r.json()), fetch('data/world_returns.json').then(r=>r.json())]);
+  const $ = id => document.getElementById(id), st = { p:'ytd', c:'usd' };
+  $('updated').textContent = 'Prices through ' + new Date(R.updated).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+  const pct = v => (v>0?'+':'') + (v*100).toFixed(1) + '%';
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+  // diverging colour: red -> neutral -> green, clipped at +/- cap
+  function color(v, cap) {
+    const t = Math.max(-1, Math.min(1, v / cap)), dark = document.documentElement.dataset.theme === 'dark';
+    const mid = dark ? [42,48,45] : [236,238,233], pos = dark ? [63,207,142] : [13,122,82], neg = dark ? [240,113,103] : [200,64,58];
+    const e = t > 0 ? pos : neg, k = Math.sqrt(Math.abs(t));
+    return `rgb(${mid.map((m,i)=>Math.round(m + (e[i]-m)*k)).join(',')})`;
+  }
+
+  $('map').innerHTML = `<svg viewBox="0 30 ${G.w} ${G.h-60}">` +
+    Object.entries(G.c).filter(([id]) => id !== '242').map(([id,c]) => `<path data-id="${id}" d="${c.d}"/>`).join('') +
+    Object.entries(G.dots).map(([id,[x,y]]) => `<circle data-id="${id}" cx="${x}" cy="${y}" r="5"/>`).join('') + '</svg>';
+  const shapes = [...$('map').querySelectorAll('[data-id]')];
+
+  function render() {
+    const vals = Object.entries(R.countries).map(([id,c]) => ({id, name:c.name, etf:c.etf, v:c[st.c][st.p]})).filter(x => x.v != null);
+    const sorted = [...vals].sort((a,b) => b.v - a.v);
+    const cap = Math.max(.1, Math.min(.6, [...vals].map(x=>Math.abs(x.v)).sort((a,b)=>a-b)[Math.floor(vals.length*.9)]));
+    const by = Object.fromEntries(vals.map(x => [x.id, x]));
+    shapes.forEach(s => { const x = by[s.dataset.id];
+      s.classList.toggle('has', !!x); s.classList.toggle('nodata', !x); s.style.fill = x ? color(x.v, cap) : ''; });
+    $('scale').innerHTML = `<span>${pct(-cap)}</span><span class="bar" style="background:linear-gradient(90deg,${color(-cap,cap)},${color(0,cap)},${color(cap,cap)})"></span><span>${pct(cap)}</span><span style="margin-left:auto">${st.p==='3y'||st.p==='5y'?'Annualised':'Total return'} · ${st.c.toUpperCase()}</span>`;
+
+    const max = Math.max(...vals.map(x=>Math.abs(x.v)));
+    const li = (x,i) => `<li><span class="n">${i}</span><span>${x.name} <span class="mono" style="font-size:11px;color:var(--dim)">${x.etf}</span></span><span class="v" style="color:${x.v>=0?'var(--pos)':'var(--neg)'}">${pct(x.v)}</span><span class="b" style="width:${Math.abs(x.v)/max*100}%;background:${color(x.v,cap)}"></span></li>`;
+    $('top').innerHTML = sorted.slice(0,8).map((x,i)=>li(x,i+1)).join('');
+    $('bottom').innerHTML = sorted.slice(-8).reverse().map((x,i)=>li(x,sorted.length-i)).join('');
+
+    const us = by['840'], it = by['380'], up = vals.filter(x=>x.v>0).length, med = sorted[Math.floor(sorted.length/2)].v;
+    const f = [
+      ['Best market', sorted[0].name, pct(sorted[0].v)],
+      ['Median country', `${up} of ${vals.length} markets up`, pct(med)],
+      ['United States vs Italy', `US ${pct(us.v)} · Italy ${pct(it.v)}`, (it.v>us.v?'Italy ahead by ':'US ahead by ') + ((Math.abs(it.v-us.v))*100).toFixed(1)+' pts'],
+    ];
+    $('facts').innerHTML = f.map(([t,a,b]) => `<div class="kpi"><span class="tag">${t}</span><div class="val" style="font-size:24px">${b}</div><div class="read">${a}</div></div>`).join('');
+  }
+
+  const tip = $('tip');
+  $('map').onmousemove = e => { const s = e.target.closest('[data-id]'), x = s && R.countries[s.dataset.id];
+    if (!x || x[st.c][st.p] == null) { tip.style.opacity = 0; return; }
+    const r = $('map').getBoundingClientRect(), v = x[st.c][st.p];
+    tip.innerHTML = `<div style="margin-bottom:4px"><b>${x.name}</b><span style="color:var(--dim)">${x.etf}</span></div>` +
+      ['ytd','1y','3y','5y'].map(k => `<div><span style="color:${k===st.p?'var(--text)':'var(--muted)'}">${{ytd:'YTD','1y':'1 year','3y':'3y / yr','5y':'5y / yr'}[k]}</span><b style="color:${x[st.c][k]>=0?'var(--pos)':'var(--neg)'}">${x[st.c][k]==null?'–':pct(x[st.c][k])}</b></div>`).join('');
+    const px = e.clientX - r.left; tip.style.left = (px > r.width*.65 ? px - 220 : px + 20) + 'px'; tip.style.top = (e.clientY - r.top + 10) + 'px'; tip.style.opacity = 1; };
+  $('map').onmouseleave = () => tip.style.opacity = 0;
+
+  const seg = (id, key) => $(id).onclick = e => { const b = e.target.closest('button'); if (!b) return;
+    st[key] = b.dataset.v; [...$(id).children].forEach(x => x.classList.toggle('on', x===b)); render(); };
+  seg('period','p'); seg('ccy','c');
+  new MutationObserver(render).observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
+  render();
+})();
+</script>
+</body>
+</html>

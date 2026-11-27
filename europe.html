@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Europe Dashboard · Federico Nuzzo</title>
+<script src="assets/theme.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<nav class="nav"><div class="nav-in">
+  <a href="index.html" class="logo">federico<span>.</span>nuzzo</a>
+  <div class="nav-links"><a href="index.html#lab">Lab</a><a href="lab.html">Portfolio Lab</a><a href="europe.html" class="on">Europe Dashboard</a><a href="index.html#education">Education</a></div>
+  <div class="nav-right"><button class="theme" id="theme" aria-label="Toggle dark mode">☾</button><a class="btn" href="index.html#contact">Contact</a></div>
+</div></nav>
+
+<header class="wrap page-hero">
+  <span class="tag acc">Lab · 02</span>
+  <h1>Europe Dashboard</h1>
+  <p>Where euro-area rates, inflation and government bond yields stand today, and how we got here. Official data from the ECB and Eurostat, with a one-line read on each number.</p>
+  <p class="mono" style="font-size:13px;margin-top:12px;color:var(--dim)" id="updated"></p>
+</header>
+
+<main class="wrap">
+  <div class="kpis" id="kpis"></div>
+
+  <div class="panel" style="margin-top:14px">
+    <h3>Policy rate vs inflation</h3>
+    <div class="sub">When the deposit rate sits above inflation, money is “tight”: holding cash earns a real return.</div>
+    <div class="chart" id="c-policy"></div><div class="legend" id="l-policy"></div>
+  </div>
+
+  <div class="g2" style="margin-top:14px">
+    <div class="panel">
+      <h3>Euro-area yield curve</h3>
+      <div class="sub">AAA-rated government bonds, by maturity. Today vs one month and one year ago.</div>
+      <div class="chart" id="c-curve"></div><div class="legend" id="l-curve"></div>
+      <p class="sub" id="curve-read" style="margin-top:12px"></p>
+    </div>
+    <div class="panel">
+      <h3>10-year spreads vs Germany</h3>
+      <div class="sub">Extra yield each country pays over the Bund, in basis points (monthly, since 2019).</div>
+      <div class="chart" id="c-spread"></div><div class="legend" id="l-spread"></div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:14px">
+    <h3>Country snapshot</h3>
+    <div class="sub">Latest month available for each country.</div>
+    <div style="overflow-x:auto"><table class="dtable" id="countries"></table></div>
+  </div>
+
+  <section>
+    <div class="sec-head"><div><span class="tag acc">Method</span><h2>Sources and notes</h2></div></div>
+    <div class="method" style="color:var(--muted);max-width:780px;font-size:15.5px">
+      <p><b style="color:var(--text)">Sources.</b> ECB Data Portal for the deposit facility rate, EUR/USD, unemployment, the AAA yield curve and the 10-year convergence yields by country. Eurostat for HICP inflation (the ECOICOP 2 dataset that replaced the old series in January 2026). All free, public and unmodified.</p>
+      <p style="margin-top:12px"><b style="color:var(--text)">Frequency.</b> Daily series are shown weekly to keep the page light. Country yields are monthly averages, so the spread is a monthly figure, not today's close.</p>
+      <p style="margin-top:12px"><b style="color:var(--text)">The reads.</b> The one-liners under each number are written by simple rules (above or below target, rising or falling over a year), not by hand. They describe the data, they don't forecast it.</p>
+    </div>
+  </section>
+</main>
+
+<footer><div class="wrap"><span>© 2026 Federico Nuzzo</span><span class="mono">Educational project. Not investment advice.</span></div></footer>
+
+<script src="assets/charts.js"></script>
+<script>
+(async () => {
+  const D = await (await fetch('data/europe.json')).json(), S = D.series, $ = id => document.getElementById(id);
+  $('updated').textContent = 'Data refreshed ' + Charts.fmtDate(D.updated);
+  const last = o => o.at(-1), ago = (o, months) => { const t = new Date(last(o)[0]); t.setMonth(t.getMonth() - months);
+    return o.reduce((b, x) => Math.abs(new Date(x[0]) - t) < Math.abs(new Date(b[0]) - t) ? x : b, o[0]); };
+  const sgn = v => (v > 0 ? '+' : v < 0 ? '−' : '±') + Math.abs(v);
+  const chg = (v, unit, good) => `<span class="chg" style="color:${v === 0 ? 'var(--muted)' : (good ? v > 0 : v < 0) ? 'var(--pos)' : 'var(--neg)'}">${sgn(+v.toFixed(2))}${unit} vs 1y ago</span>`;
+
+  // spread series (monthly, bp)
+  const de = Object.fromEntries(D.yields.DE.obs);
+  const spread = c => D.yields[c].obs.filter(o => de[o[0]] != null).map(o => [o[0], Math.round((o[1] - de[o[0]]) * 100)]);
+  const it = spread('IT');
+
+  const hicp = S.hicp.obs, core = S.core.obs, dfr = S.dfr.obs, fx = S.eurusd.obs, un = S.unemp.obs, bund = D.yields.DE.obs;
+  const L = { dfr: last(dfr)[1], hicp: last(hicp)[1], core: last(core)[1], it: last(it)[1], bund: last(bund)[1], fx: last(fx)[1], un: last(un)[1] };
+  const real = +(L.dfr - L.hicp).toFixed(2);
+  const K = [
+    { tag:'ECB deposit rate', val:L.dfr.toFixed(2)+'%', c:chg(L.dfr - ago(dfr,12)[1], ' pts'), obs:dfr, date:last(dfr)[0],
+      read: real >= 0 ? `Above inflation by ${real} pts: a positive real rate.` : `Below inflation by ${Math.abs(real)} pts: real rates are negative.` },
+    { tag:'Inflation (HICP)', val:L.hicp.toFixed(1)+'%', c:chg(L.hicp - ago(hicp,12)[1], ' pts', false), obs:hicp, date:last(hicp)[0],
+      read: Math.abs(L.hicp - 2) <= .3 ? 'Close to the ECB’s 2% target.' : L.hicp > 2 ? `${(L.hicp-2).toFixed(1)} pts above the ECB’s 2% target.` : `${(2-L.hicp).toFixed(1)} pts below the ECB’s 2% target.` },
+    { tag:'Core inflation', val:L.core.toFixed(1)+'%', c:chg(L.core - ago(core,12)[1], ' pts', false), obs:core, date:last(core)[0],
+      read: L.hicp > L.core ? 'Below headline: energy and food are pushing prices up.' : 'Above headline: energy and food are holding prices down.' },
+    { tag:'BTP–Bund spread', val:L.it+' bp', c:chg(L.it - ago(it,12)[1], ' bp', false), obs:it, date:last(it)[0],
+      read: `Italy pays ${(L.it/100).toFixed(2)} pts more than Germany to borrow for 10 years.` },
+    { tag:'German 10-year yield', val:L.bund.toFixed(2)+'%', c:chg(L.bund - ago(bund,12)[1], ' pts'), obs:bund, date:last(bund)[0],
+      read: L.bund > L.dfr ? `${(L.bund-L.dfr).toFixed(2)} pts above the deposit rate: markets want more to lock money up for 10 years.` : 'Below the deposit rate: markets expect cuts ahead.' },
+    { tag:'EUR / USD', val:L.fx.toFixed(4), c:chg(L.fx - ago(fx,12)[1], '', true), obs:fx, date:last(fx)[0],
+      read: L.fx > ago(fx,12)[1] ? 'Euro stronger than a year ago: US assets are worth less in euros.' : 'Euro weaker than a year ago: US assets are worth more in euros.' },
+  ];
+  $('kpis').innerHTML = K.map((k,i) => `<div class="kpi rv in"><span class="tag">${k.tag}</span><div class="val">${k.val}</div>${k.c}<div class="read">${k.read}</div><div class="spk" id="spk${i}"></div><span class="tag" style="font-size:10.5px">${Charts.fmtDate(k.date)}</span></div>`).join('');
+  K.forEach((k,i) => Charts.spark($('spk'+i), k.obs.slice(-260)));
+
+  const leg = (id, s) => $(id).innerHTML = s.map(x => `<span><i style="background:${x.color}"></i>${x.name}</span>`).join('');
+  function draw() {
+    const pol = [
+      { name:'Deposit rate', color:'var(--accent)', obs:dfr, width:2.4 },
+      { name:'Inflation', color:'var(--p-mix)', obs:hicp },
+      { name:'Core inflation', color:'var(--p-permanent)', obs:core, dash:true },
+    ];
+    Charts.time($('c-policy'), pol, { h:300, yfmt:v => v.toFixed(1)+'%', zeroLine:true }); leg('l-policy', pol);
+
+    const M = Object.keys(D.curve), at = m => { const o = D.curve; return M.map(k => ago(o[k], m)[1]); };
+    const cv = [ { name:'Today', color:'var(--accent)', vals:M.map(k => last(D.curve[k])[1]), width:3 },
+                 { name:'1 month ago', color:'var(--p-threefund)', vals:at(1) },
+                 { name:'1 year ago', color:'var(--dim)', vals:at(12), dash:true } ];
+    Charts.cat($('c-curve'), M, cv, { h:260 }); leg('l-curve', cv);
+    const slope = cv[0].vals[M.indexOf('10Y')] - cv[0].vals[M.indexOf('2Y')];
+    $('curve-read').textContent = slope > .25 ? `Upward sloping: 10-year yields are ${slope.toFixed(2)} pts above 2-year. Lenders want more for lending long.`
+      : slope < -.1 ? `Inverted: 2-year yields are above 10-year by ${Math.abs(slope).toFixed(2)} pts, often read as a sign of cuts or slowdown ahead.` : 'Almost flat between 2 and 10 years.';
+
+    const cols = {IT:'var(--accent)', FR:'var(--p-threefund)', ES:'var(--p-permanent)', GR:'var(--p-butterfly)', PT:'var(--p-mix)'};
+    const sp = Object.entries(cols).map(([c, color]) => ({ name:D.yields[c].name, color, obs:spread(c).filter(o => o[0] >= '2019'), width:c==='IT'?2.6:1.6 }));
+    Charts.time($('c-spread'), sp, { h:260, yfmt:v => Math.round(v)+'' , zeroLine:true }); leg('l-spread', sp);
+  }
+  draw(); let tm; addEventListener('resize', () => { clearTimeout(tm); tm = setTimeout(draw, 150); });
+
+  const rows = Object.entries(D.yields).map(([c, y]) => ({ c, name:y.name, yld:last(y.obs)[1], sp:c==='DE'?null:last(spread(c))[1], inf:D.inflation_by_country[c]?.[1] }))
+    .sort((a,b) => b.yld - a.yld);
+  $('countries').innerHTML = `<tr><th>Country</th><th>10Y yield</th><th>Spread vs DE</th><th>Inflation</th><th>Real 10Y yield</th></tr>` +
+    rows.map(r => `<tr><td>${r.name}</td><td>${r.yld.toFixed(2)}%</td><td>${r.sp==null?'—':r.sp+' bp'}</td><td>${r.inf.toFixed(1)}%</td><td style="color:${r.yld-r.inf>=0?'var(--pos)':'var(--neg)'}">${(r.yld-r.inf>0?'+':'')+(r.yld-r.inf).toFixed(2)}%</td></tr>`).join('');
+})();
+</script>
+</body>
+</html>
