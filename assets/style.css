@@ -175,3 +175,5 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
 .dd-menu{position:absolute;top:calc(100% + 10px);left:0;display:none;flex-direction:column;min-width:220px;padding:6px;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.12)}
 .dd:hover .dd-menu,.dd:focus-within .dd-menu{display:flex}
 .dd-menu a{display:block;white-space:nowrap}
+.nav-links{align-items:center}
+.nav-links a,.dd>a{display:inline-flex;align-items:center;line-height:1.2}
